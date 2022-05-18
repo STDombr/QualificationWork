@@ -1,0 +1,24 @@
+syntax = "proto3";
+package service;
+
+import "service/client_info.proto";
+
+message Question {
+  string id = 1;
+  string body = 2;
+}
+
+message Answer {
+  string question_id = 1;
+  service.ClientInfo client_info = 2;
+  Option option = 3;
+  int64 timestamp_in_millis = 4;
+}
+
+message Option {
+  Enum enum = 1;
+  enum Enum {
+    ENUM_NO = 0;
+    ENUM_YES = 1;
+  }
+}

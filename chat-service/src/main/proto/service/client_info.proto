@@ -1,0 +1,6 @@
+syntax = "proto3";
+package service;
+
+message ClientInfo {
+  string client_id = 1;
+}

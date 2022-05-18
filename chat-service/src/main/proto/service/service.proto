@@ -1,0 +1,25 @@
+syntax = "proto3";
+package service;
+
+import "service/chat/chat_info.proto";
+import "service/chat/chat_message.proto";
+import "service/client_info.proto";
+import "service/status.proto";
+import "service/question.proto";
+import "google/protobuf/empty.proto";
+
+service ChatService {
+
+  rpc login (service.ClientInfo) returns (stream service.chat.ChatInfo);
+  rpc logout (service.ClientInfo) returns (service.Status);
+
+  rpc getQuestion (google.protobuf.Empty) returns (service.Question);
+  rpc sendAnswer (service.Answer) returns (google.protobuf.Empty);
+
+  rpc getAllChats (service.ClientInfo) returns (service.chat.ChatInfoList);
+
+  rpc openChat (service.chat.ChatInfo) returns (stream service.chat.ChatResponse);
+  rpc sendMessage (service.chat.ChatRequest) returns (service.Status);
+  rpc closeChat (service.chat.ChatInfo) returns (service.Status);
+
+}

@@ -1,0 +1,7 @@
+syntax = "proto3";
+package service.login;
+
+message ClientInfo {
+  string username = 1;
+  string password = 2;
+}

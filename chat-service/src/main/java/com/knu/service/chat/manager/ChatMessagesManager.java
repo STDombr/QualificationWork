@@ -13,7 +13,7 @@ import java.util.logging.Logger;
 
 public class ChatMessagesManager {
 
-    private static final Logger logger = Logger.getLogger(NewPairsNotification.class.getName());
+    private static final Logger logger = Logger.getLogger(ChatMessagesManager.class.getName());
     private Set<MutablePair<ClientInfoOuterClass.ClientInfo, StreamObserver<UnsolicitedMessageOuterClass.UnsolicitedMessage>>> clients = Sets.newConcurrentHashSet();
 
     public void addNewClient(ClientInfoOuterClass.ClientInfo chatInfo, StreamObserver<UnsolicitedMessageOuterClass.UnsolicitedMessage> streamObserver) {

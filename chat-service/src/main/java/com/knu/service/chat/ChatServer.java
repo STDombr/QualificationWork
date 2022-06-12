@@ -1,13 +1,12 @@
 package com.knu.service.chat;
 
-import java.io.IOException;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
-
 import com.knu.service.chat.service.ChatServiceImpl;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
-import io.grpc.netty.NettyServerBuilder;
+
+import java.io.IOException;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
 public class ChatServer {
     private static final Logger logger = Logger.getLogger(ChatServer.class.getName());

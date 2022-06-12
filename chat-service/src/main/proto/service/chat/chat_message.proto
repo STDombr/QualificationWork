@@ -13,3 +13,7 @@ message ChatResponse {
   string body = 2;
   int64 timestamp_in_millis = 3;
 }
+
+message ChatResponseList {
+  repeated ChatResponse list = 1;
+}

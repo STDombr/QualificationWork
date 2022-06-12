@@ -7,11 +7,7 @@ import com.knu.service.chat.manager.NewPairsNotification;
 import com.knu.service.chat.manager.PropertiesManager;
 import io.grpc.stub.StreamObserver;
 import service.ChatServiceGrpc;
-import service.ClientInfoOuterClass;
-import service.QuestionOuterClass;
-import service.StatusOuterClass;
-import service.chat.ChatInfoOuterClass;
-import service.chat.ChatMessage;
+import service.chat.*;
 
 import java.io.IOException;
 import java.util.List;
@@ -37,11 +33,22 @@ public class ChatServiceImpl extends ChatServiceGrpc.ChatServiceImplBase {
     }
 
     @Override
-    public void login(ClientInfoOuterClass.ClientInfo request, StreamObserver<ChatInfoOuterClass.ChatInfo> responseObserver) {
+    public void login(ClientInfoOuterClass.ClientInfo request, StreamObserver<UnsolicitedMessageOuterClass.UnsolicitedMessage> responseObserver) {
 
         if (!pairsNotification.isLogged(request) && !chatMessagesManager.isLogged(request)) {
             pairsNotification.addNewClient(request, responseObserver);
             logger.info("Client: " + request + " - added to NewPairsNotification");
+            chatMessagesManager.addNewClient(request, responseObserver);
+            logger.info("Client: " + request + " - added to ChatMessagesManager");
+
+            UnsolicitedMessageOuterClass.UnsolicitedMessage message = UnsolicitedMessageOuterClass.UnsolicitedMessage.newBuilder()
+                    .setStatus(StatusOuterClass.Status.newBuilder()
+                            .setEnum(StatusOuterClass.Status.Enum.SUCCESS)
+                            .build())
+                    .build();
+
+            responseObserver.onNext(message);
+
         } else {
             responseObserver.onError(new Exception("This client already logged: " + request));
         }
@@ -53,7 +60,7 @@ public class ChatServiceImpl extends ChatServiceGrpc.ChatServiceImplBase {
 
         pairsNotification.removeClient(request);
 
-        chatMessagesManager.removeChat(request);
+        chatMessagesManager.removeClient(request);
 
         responseObserver.onNext(StatusOuterClass.Status.newBuilder()
                 .setEnum(StatusOuterClass.Status.Enum.SUCCESS)
@@ -66,6 +73,7 @@ public class ChatServiceImpl extends ChatServiceGrpc.ChatServiceImplBase {
     @Override
     public void getQuestion(Empty request, StreamObserver<QuestionOuterClass.Question> responseObserver) {
         responseObserver.onNext(dbManager.getQuestion(System.currentTimeMillis()));
+        responseObserver.onCompleted();
     }
 
     @Override
@@ -74,6 +82,7 @@ public class ChatServiceImpl extends ChatServiceGrpc.ChatServiceImplBase {
         if (pairsNotification.isLogged(request.getClientInfo())) {
             pairsNotification.addAnswer(request);
         }
+        responseObserver.onCompleted();
     }
 
     @Override
@@ -90,21 +99,14 @@ public class ChatServiceImpl extends ChatServiceGrpc.ChatServiceImplBase {
     }
 
     @Override
-    public void openChat(ChatInfoOuterClass.ChatInfo request, StreamObserver<ChatMessage.ChatResponse> responseObserver) {
+    public void getChatMessages(ChatInfoOuterClass.ChatInfo request, StreamObserver<ChatMessage.ChatResponseList> responseObserver) {
 
-        if (!chatMessagesManager.isLogged(request)) {
-            chatMessagesManager.addNewClient(request, responseObserver);
-            logger.info("Chat: " + request + " - added to ChatMessagesManager");
-        } else {
-            responseObserver.onError(new Exception("This chat already logged: " + request));
+        if (chatMessagesManager.isLogged(request.getSenderId())) {
+            ChatMessage.ChatResponseList list = dbManager.getAllChatHistory(request);
+
+            responseObserver.onNext(list);
         }
-
-        List<ChatMessage.ChatResponse> list = dbManager.getAllChatHistory(request);
-
-        for (ChatMessage.ChatResponse response : list) {
-            responseObserver.onNext(response);
-        }
-
+        responseObserver.onCompleted();
     }
 
     @Override
@@ -112,7 +114,7 @@ public class ChatServiceImpl extends ChatServiceGrpc.ChatServiceImplBase {
 
         logger.info("Received ChatInfo request on chat server:\n" + request.toString());
 
-        if (chatMessagesManager.isLogged(request.getChatInfo())) {
+        if (chatMessagesManager.isLogged(request.getChatInfo().getSenderId())) {
 
             ChatMessage.ChatResponse response = dbManager.addNewMessage(request);
 
@@ -131,9 +133,9 @@ public class ChatServiceImpl extends ChatServiceGrpc.ChatServiceImplBase {
             }
 
         } else {
-            logger.warning("CHAT_NOT_OPENED");
+            logger.warning("CLIENT_NOT_LOGGED");
             responseObserver.onNext(StatusOuterClass.Status.newBuilder()
-                    .setEnum(StatusOuterClass.Status.Enum.CHAT_NOT_OPENED)
+                    .setEnum(StatusOuterClass.Status.Enum.CLIENT_NOT_LOGGED)
                     .build());
         }
 
@@ -141,16 +143,4 @@ public class ChatServiceImpl extends ChatServiceGrpc.ChatServiceImplBase {
 
     }
 
-    @Override
-    public void closeChat(ChatInfoOuterClass.ChatInfo request, StreamObserver<StatusOuterClass.Status> responseObserver) {
-
-        chatMessagesManager.removeChat(request);
-
-        responseObserver.onNext(StatusOuterClass.Status.newBuilder()
-                .setEnum(StatusOuterClass.Status.Enum.SUCCESS)
-                .build());
-
-        responseObserver.onCompleted();
-
-    }
 }

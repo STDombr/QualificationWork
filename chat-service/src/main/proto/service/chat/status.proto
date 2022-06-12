@@ -1,5 +1,5 @@
 syntax = "proto3";
-package service;
+package service.chat;
 
 message Status {
   Enum enum = 1;
@@ -10,6 +10,5 @@ message Status {
     UNKNOWN_CHAT_INFO = 2;
     ERROR = 3;
     CLIENT_NOT_LOGGED = 4;
-    CHAT_NOT_OPENED = 5;
   }
 }

@@ -1,8 +1,8 @@
 package com.knu.service.chat.manager;
 
 import com.knu.service.chat.tools.Converter;
-import service.ClientInfoOuterClass;
-import service.QuestionOuterClass;
+import service.chat.ClientInfoOuterClass;
+import service.chat.QuestionOuterClass;
 import service.chat.ChatInfoOuterClass;
 import service.chat.ChatMessage;
 
@@ -47,9 +47,9 @@ public class DBManager {
         }
     }
 
-    public List<ChatMessage.ChatResponse> getAllChatHistory(ChatInfoOuterClass.ChatInfo chatInfo) {
+    public ChatMessage.ChatResponseList getAllChatHistory(ChatInfoOuterClass.ChatInfo chatInfo) {
 
-        List<ChatMessage.ChatResponse> list = new LinkedList<>();
+        ChatMessage.ChatResponseList.Builder listBuilder = ChatMessage.ChatResponseList.newBuilder();
 
         try {
             PreparedStatement preparedStatement = connection.prepareStatement(allChatMessages, Statement.RETURN_GENERATED_KEYS);
@@ -63,7 +63,7 @@ public class DBManager {
 
                 if ((chatInfo.getSenderId().equals(response.getChatInfo().getSenderId()) && chatInfo.getRecipientId().equals(response.getChatInfo().getRecipientId()))
                         || (chatInfo.getSenderId().equals(response.getChatInfo().getRecipientId()) && chatInfo.getRecipientId().equals(response.getChatInfo().getSenderId()))) {
-                    list.add(response);
+                    listBuilder.addList(response);
                 }
             }
         } catch (SQLException throwables) {
@@ -71,7 +71,7 @@ public class DBManager {
             return null;
         }
         logger.info("messages successfully found");
-        return list;
+        return listBuilder.build();
     }
 
     public ChatMessage.ChatResponse addNewMessage(ChatMessage.ChatRequest request) {

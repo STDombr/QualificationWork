@@ -3,10 +3,7 @@ package com.knu.service.chat.manager;
 import com.google.common.collect.Sets;
 import io.grpc.stub.StreamObserver;
 import org.apache.commons.lang3.tuple.MutablePair;
-import service.ClientInfoOuterClass;
-import service.QuestionOuterClass;
-import service.chat.ChatInfoOuterClass;
-import service.chat.ChatMessage;
+import service.chat.*;
 
 import java.util.*;
 import java.util.logging.Logger;
@@ -14,7 +11,7 @@ import java.util.logging.Logger;
 public class NewPairsNotification {
 
     private static final Logger logger = Logger.getLogger(ChatMessagesManager.class.getName());
-    private Set<MutablePair<ClientInfoOuterClass.ClientInfo, StreamObserver<ChatInfoOuterClass.ChatInfo>>> clients = Sets.newConcurrentHashSet();
+    private Set<MutablePair<ClientInfoOuterClass.ClientInfo, StreamObserver<UnsolicitedMessageOuterClass.UnsolicitedMessage>>> clients = Sets.newConcurrentHashSet();
 
     private Map<String, Set<QuestionOuterClass.Answer>> allAnswers = new HashMap<>();
     private DBManager dbManager;
@@ -27,13 +24,13 @@ public class NewPairsNotification {
         this.dbManager = dbManager;
     }
 
-    public void addNewClient(ClientInfoOuterClass.ClientInfo clientInfo, StreamObserver<ChatInfoOuterClass.ChatInfo> streamObserver) {
+    public void addNewClient(ClientInfoOuterClass.ClientInfo clientInfo, StreamObserver<UnsolicitedMessageOuterClass.UnsolicitedMessage> streamObserver) {
         clients.add(new MutablePair<>(clientInfo, streamObserver));
     }
 
     public void removeClient(ClientInfoOuterClass.ClientInfo clientInfo) {
 
-        for (MutablePair<ClientInfoOuterClass.ClientInfo, StreamObserver<ChatInfoOuterClass.ChatInfo>> pair : clients) {
+        for (MutablePair<ClientInfoOuterClass.ClientInfo, StreamObserver<UnsolicitedMessageOuterClass.UnsolicitedMessage>> pair : clients) {
 
             ClientInfoOuterClass.ClientInfo temp = pair.getKey();
 
@@ -45,10 +42,10 @@ public class NewPairsNotification {
 
     public boolean isLogged(ClientInfoOuterClass.ClientInfo clientInfo) {
 
-        for (MutablePair<ClientInfoOuterClass.ClientInfo, StreamObserver<ChatInfoOuterClass.ChatInfo>> pair : clients) {
+        for (MutablePair<ClientInfoOuterClass.ClientInfo, StreamObserver<UnsolicitedMessageOuterClass.UnsolicitedMessage>> pair : clients) {
 
             ClientInfoOuterClass.ClientInfo temp = pair.getKey();
-            StreamObserver<ChatInfoOuterClass.ChatInfo> observer = pair.getValue();
+            StreamObserver<UnsolicitedMessageOuterClass.UnsolicitedMessage> observer = pair.getValue();
 
             if (temp.getClientId().equals(clientInfo.getClientId())) {
                 try {
@@ -89,16 +86,19 @@ public class NewPairsNotification {
             if (tempOption != option) {
 
                 ChatInfoOuterClass.ChatInfo chatInfo = dbManager.addNewChat(clientInfo.getClientId(), answer.getClientInfo().getClientId());
+                UnsolicitedMessageOuterClass.UnsolicitedMessage unsolicitedMessage = UnsolicitedMessageOuterClass.UnsolicitedMessage.newBuilder()
+                        .setChatInfo(chatInfo)
+                        .build();
 
-                for (MutablePair<ClientInfoOuterClass.ClientInfo, StreamObserver<ChatInfoOuterClass.ChatInfo>> pair : clients) {
+                for (MutablePair<ClientInfoOuterClass.ClientInfo, StreamObserver<UnsolicitedMessageOuterClass.UnsolicitedMessage>> pair : clients) {
                     ClientInfoOuterClass.ClientInfo tempClientInfo = pair.getKey();
 
                     if (tempClientInfo.equals(clientInfo)) {
-                        pair.getValue().onNext(chatInfo);
+                        pair.getValue().onNext(unsolicitedMessage);
                     }
 
                     if (tempClientInfo.equals(temp.getClientInfo())) {
-                        pair.getValue().onNext(chatInfo);
+                        pair.getValue().onNext(unsolicitedMessage);
                         answers.remove(temp);
                     }
                 }

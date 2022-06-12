@@ -3,9 +3,10 @@ package com.knu.service.chat.manager;
 import com.google.common.collect.Sets;
 import io.grpc.stub.StreamObserver;
 import org.apache.commons.lang3.tuple.MutablePair;
-import service.ClientInfoOuterClass;
+import service.chat.ClientInfoOuterClass;
 import service.chat.ChatInfoOuterClass;
 import service.chat.ChatMessage;
+import service.chat.UnsolicitedMessageOuterClass;
 
 import java.util.Set;
 import java.util.logging.Logger;
@@ -13,31 +14,19 @@ import java.util.logging.Logger;
 public class ChatMessagesManager {
 
     private static final Logger logger = Logger.getLogger(NewPairsNotification.class.getName());
-    private Set<MutablePair<ChatInfoOuterClass.ChatInfo, StreamObserver<ChatMessage.ChatResponse>>> clients = Sets.newConcurrentHashSet();
+    private Set<MutablePair<ClientInfoOuterClass.ClientInfo, StreamObserver<UnsolicitedMessageOuterClass.UnsolicitedMessage>>> clients = Sets.newConcurrentHashSet();
 
-    public void addNewClient(ChatInfoOuterClass.ChatInfo chatInfo, StreamObserver<ChatMessage.ChatResponse> streamObserver) {
+    public void addNewClient(ClientInfoOuterClass.ClientInfo chatInfo, StreamObserver<UnsolicitedMessageOuterClass.UnsolicitedMessage> streamObserver) {
         clients.add(new MutablePair<>(chatInfo, streamObserver));
     }
 
-    public void removeChat(ChatInfoOuterClass.ChatInfo chatInfo) {
+    public void removeClient(ClientInfoOuterClass.ClientInfo clientInfo) {
 
-        for (MutablePair<ChatInfoOuterClass.ChatInfo, StreamObserver<ChatMessage.ChatResponse>> pair : clients) {
+        for (MutablePair<ClientInfoOuterClass.ClientInfo, StreamObserver<UnsolicitedMessageOuterClass.UnsolicitedMessage>> pair : clients) {
 
-            ChatInfoOuterClass.ChatInfo temp = pair.getKey();
+            ClientInfoOuterClass.ClientInfo temp = pair.getKey();
 
-            if (temp.getChatId().equals(chatInfo.getChatId())) {
-                clients.remove(pair);
-            }
-        }
-    }
-
-    public void removeChat(ClientInfoOuterClass.ClientInfo clientInfo) {
-
-        for (MutablePair<ChatInfoOuterClass.ChatInfo, StreamObserver<ChatMessage.ChatResponse>> pair : clients) {
-
-            ChatInfoOuterClass.ChatInfo temp = pair.getKey();
-
-            if (temp.getSenderId().equals(clientInfo.getClientId())) {
+            if (temp.getClientId().equals(clientInfo.getClientId())) {
                 clients.remove(pair);
             }
         }
@@ -45,35 +34,40 @@ public class ChatMessagesManager {
 
     public void boardCast(ChatMessage.ChatResponse response) {
 
-        for (MutablePair<ChatInfoOuterClass.ChatInfo, StreamObserver<ChatMessage.ChatResponse>> pair : clients) {
+        UnsolicitedMessageOuterClass.UnsolicitedMessage unsolicitedMessage = UnsolicitedMessageOuterClass.UnsolicitedMessage.newBuilder()
+                .setChatResponse(response)
+                .build();
 
-            ChatInfoOuterClass.ChatInfo chatInfo = pair.getKey();
+        for (MutablePair<ClientInfoOuterClass.ClientInfo, StreamObserver<UnsolicitedMessageOuterClass.UnsolicitedMessage>> pair : clients) {
 
-            if (response.getChatInfo().getChatId().equals(chatInfo.getChatId())) {
+            ClientInfoOuterClass.ClientInfo clientInfo = pair.getKey();
+
+            if (response.getChatInfo().getSenderId().equals(clientInfo.getClientId()) ||
+                    response.getChatInfo().getRecipientId().equals(clientInfo.getClientId())) {
                 try {
-                    pair.getValue().onNext(response);
+                    pair.getValue().onNext(unsolicitedMessage);
                 } catch (Exception e) {
-                    logger.warning("Chat: " + pair.getKey() + " - isnt available");
-                    removeChat(pair.getKey());
+                    logger.warning("Client: " + pair.getKey() + " - isnt available");
+                    removeClient(pair.getKey());
                 }
 
             }
         }
     }
 
-    public boolean isLogged(ChatInfoOuterClass.ChatInfo chatInfo) {
+    public boolean isLogged(ClientInfoOuterClass.ClientInfo clientInfo) {
 
-        for (MutablePair<ChatInfoOuterClass.ChatInfo, StreamObserver<ChatMessage.ChatResponse>> pair : clients) {
+        for (MutablePair<ClientInfoOuterClass.ClientInfo, StreamObserver<UnsolicitedMessageOuterClass.UnsolicitedMessage>> pair : clients) {
 
-            ChatInfoOuterClass.ChatInfo temp = pair.getKey();
-            StreamObserver<ChatMessage.ChatResponse> observer = pair.getValue();
+            ClientInfoOuterClass.ClientInfo temp = pair.getKey();
+            StreamObserver<UnsolicitedMessageOuterClass.UnsolicitedMessage> observer = pair.getValue();
 
-            if (temp.getChatId().equals(chatInfo.getChatId()) && temp.getSenderId().equals(chatInfo.getSenderId())) {
+            if (temp.getClientId().equals(clientInfo.getClientId())) {
                 try {
                     observer.onNext(null);
                     return true;
                 } catch (Exception e) {
-                    removeChat(chatInfo);
+                    removeClient(clientInfo);
                     return false;
                 }
             }
@@ -82,19 +76,19 @@ public class ChatMessagesManager {
         return false;
     }
 
-    public boolean isLogged(ClientInfoOuterClass.ClientInfo clientInfo) {
+    public boolean isLogged(String clientID) {
 
-        for (MutablePair<ChatInfoOuterClass.ChatInfo, StreamObserver<ChatMessage.ChatResponse>> pair : clients) {
+        for (MutablePair<ClientInfoOuterClass.ClientInfo, StreamObserver<UnsolicitedMessageOuterClass.UnsolicitedMessage>> pair : clients) {
 
-            ChatInfoOuterClass.ChatInfo temp = pair.getKey();
-            StreamObserver<ChatMessage.ChatResponse> observer = pair.getValue();
+            ClientInfoOuterClass.ClientInfo temp = pair.getKey();
+            StreamObserver<UnsolicitedMessageOuterClass.UnsolicitedMessage> observer = pair.getValue();
 
-            if (temp.getSenderId().equals(clientInfo.getClientId())) {
+            if (temp.getClientId().equals(clientID)) {
                 try {
                     observer.onNext(null);
                     return true;
                 } catch (Exception e) {
-                    removeChat(clientInfo);
+                    removeClient(temp);
                     return false;
                 }
             }

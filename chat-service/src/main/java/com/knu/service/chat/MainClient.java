@@ -6,10 +6,7 @@ import io.grpc.ManagedChannelBuilder;
 import io.grpc.netty.NettyChannelBuilder;
 import io.grpc.stub.StreamObserver;
 import service.ChatServiceGrpc;
-import service.ClientInfoOuterClass;
-import service.StatusOuterClass;
-import service.chat.ChatInfoOuterClass;
-import service.chat.ChatMessage;
+import service.chat.*;
 
 import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
@@ -27,24 +24,7 @@ public class MainClient {
         stub = ChatServiceGrpc.newStub(channel);
     }
 
-    public void login(ClientInfoOuterClass.ClientInfo clientInfo) {
-
-        StreamObserver<ChatInfoOuterClass.ChatInfo> observer = new StreamObserver<ChatInfoOuterClass.ChatInfo>() {
-            @Override
-            public void onNext(ChatInfoOuterClass.ChatInfo value) {
-                logger.info("Created new chat: " + value.toString());
-            }
-
-            @Override
-            public void onError(Throwable t) {
-                t.printStackTrace();
-            }
-
-            @Override
-            public void onCompleted() {
-                logger.info("Server closed stream with receiving new chats to client: " + clientInfo);
-            }
-        };
+    public void login(ClientInfoOuterClass.ClientInfo clientInfo, StreamObserver<UnsolicitedMessageOuterClass.UnsolicitedMessage> observer) {
 
         stub.login(clientInfo, observer);
 
@@ -58,40 +38,16 @@ public class MainClient {
 
     }
 
-    public void openChat(ChatInfoOuterClass.ChatInfo chatInfo) {
+    public void getChatMessages(ChatInfoOuterClass.ChatInfo chatInfo) {
 
-        StreamObserver<ChatMessage.ChatResponse> observer = new StreamObserver<ChatMessage.ChatResponse>() {
-            @Override
-            public void onNext(ChatMessage.ChatResponse value) {
-                logger.info("Received new message: " + value);
-            }
+        ChatMessage.ChatResponseList list = blockingStub.getChatMessages(chatInfo);
 
-            @Override
-            public void onError(Throwable t) {
-                t.printStackTrace();
-            }
-
-            @Override
-            public void onCompleted() {
-                logger.info("Server closed stream with chat: " + chatInfo);
-            }
-        };
-
-        stub.openChat(chatInfo, observer);
-
+        logger.info("Received messages: " + list);
     }
 
     public void sendMessage(ChatMessage.ChatRequest chatRequest) {
 
         StatusOuterClass.Status status = blockingStub.sendMessage(chatRequest);
-
-        System.out.println(status);
-
-    }
-
-    public void closeChat(ChatInfoOuterClass.ChatInfo chatInfo) {
-
-        StatusOuterClass.Status status = blockingStub.closeChat(chatInfo);
 
         System.out.println(status);
 
@@ -109,22 +65,51 @@ public class MainClient {
                 .setClientId("1")
                 .build();
 
-        client.login(clientInfo);
-
         ChatInfoOuterClass.ChatInfo chatInfo = ChatInfoOuterClass.ChatInfo.newBuilder()
                 .setChatId("1")
                 .setSenderId("1")
                 .setRecipientId("2")
                 .build();
 
-        client.openChat(chatInfo);
-
         ChatMessage.ChatRequest request = ChatMessage.ChatRequest.newBuilder()
                 .setChatInfo(chatInfo)
                 .setBody("Test message from STDombr")
                 .build();
 
-        client.sendMessage(request);
+        StreamObserver<UnsolicitedMessageOuterClass.UnsolicitedMessage> observer = new StreamObserver<UnsolicitedMessageOuterClass.UnsolicitedMessage>() {
+            @Override
+            public void onNext(UnsolicitedMessageOuterClass.UnsolicitedMessage value) {
+                switch (value.getMessageCase()) {
+                    case STATUS:
+                        if (value.getStatus().getEnum() == StatusOuterClass.Status.Enum.SUCCESS) {
+
+                            client.getChatMessages(chatInfo);
+
+                            client.sendMessage(request);
+
+                        }
+                        break;
+                    case CHAT_INFO:
+                        logger.info("Created new chat: " + value.toString());
+                        break;
+                    case CHAT_RESPONSE:
+                        logger.info("Received new chat message: " + value.toString());
+                        break;
+                }
+            }
+
+            @Override
+            public void onError(Throwable t) {
+                t.printStackTrace();
+            }
+
+            @Override
+            public void onCompleted() {
+                logger.info("Server closed stream with unsolicited messages");
+            }
+        };
+
+        client.login(clientInfo, observer);
 
         while (true) {
 

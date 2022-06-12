@@ -1,7 +1,7 @@
 package com.knu.service.chat.tools;
 
 import com.google.protobuf.Timestamp;
-import service.QuestionOuterClass;
+import service.chat.QuestionOuterClass;
 import service.chat.ChatInfoOuterClass;
 import service.chat.ChatMessage;
 

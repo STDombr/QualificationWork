@@ -1,6 +1,0 @@
-syntax = "proto3";
-package service.chat;
-
-message ClientInfo {
-  string client_id = 1;
-}

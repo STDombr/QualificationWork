@@ -180,6 +180,9 @@
                             <goal>compile</goal>
                             <goal>compile-custom</goal>
                         </goals>
+                        <configuration>
+                            <protoSourceRoot>${basedir}/../proto</protoSourceRoot>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

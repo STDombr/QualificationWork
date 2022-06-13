@@ -43,7 +43,7 @@ public class ChatServiceImpl extends ChatServiceGrpc.ChatServiceImplBase {
 
             UnsolicitedMessageOuterClass.UnsolicitedMessage message = UnsolicitedMessageOuterClass.UnsolicitedMessage.newBuilder()
                     .setStatus(StatusOuterClass.Status.newBuilder()
-                            .setEnum(StatusOuterClass.Status.Enum.SUCCESS)
+                            .setEnum(StatusOuterClass.Status.Enum.LOGIN_SUCCESS)
                             .build())
                     .build();
 
@@ -63,7 +63,7 @@ public class ChatServiceImpl extends ChatServiceGrpc.ChatServiceImplBase {
         chatMessagesManager.removeClient(request);
 
         responseObserver.onNext(StatusOuterClass.Status.newBuilder()
-                .setEnum(StatusOuterClass.Status.Enum.SUCCESS)
+                .setEnum(StatusOuterClass.Status.Enum.LOGOUT_SUCCESS)
                 .build());
 
         responseObserver.onCompleted();

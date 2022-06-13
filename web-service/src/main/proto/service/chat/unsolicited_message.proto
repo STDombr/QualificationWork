@@ -1,0 +1,14 @@
+syntax = "proto3";
+package service.chat;
+
+import "service/chat/chat_info.proto";
+import "service/chat/chat_message.proto";
+import "service/chat/status.proto";
+
+message UnsolicitedMessage {
+  oneof Message {
+    ChatInfo chat_info = 1;
+    ChatResponse chat_response = 2;
+    Status status = 3;
+  }
+}

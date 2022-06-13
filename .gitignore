@@ -109,3 +109,4 @@ install_manifest.txt
 *.o
 *.user
 *.bak*
+text/

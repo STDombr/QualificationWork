@@ -8,8 +8,8 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-public class ChatServer {
-    private static final Logger logger = Logger.getLogger(ChatServer.class.getName());
+public class LoginServer {
+    private static final Logger logger = Logger.getLogger(LoginServer.class.getName());
 
     Server server;
 
@@ -25,7 +25,7 @@ public class ChatServer {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             System.err.println("*** shutting down gRPC server since JVM is shutting down");
             try {
-                ChatServer.this.stop();
+                LoginServer.this.stop();
             } catch (InterruptedException e) {
                 e.printStackTrace(System.err);
             }

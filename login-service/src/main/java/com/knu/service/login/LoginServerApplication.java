@@ -5,9 +5,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import java.io.IOException;
 
 @SpringBootApplication
-public class ChatServerApplication {
+public class LoginServerApplication {
     public static void main(String[] args) throws IOException, InterruptedException {
-        ChatServer server = new ChatServer();
+        LoginServer server = new LoginServer();
         server.start(5577);
         server.blockUntilShutdown();
     }

@@ -11,9 +11,6 @@ public class LoginManager {
     private ManagedChannel channel;
     private final LoginServiceGrpc.LoginServiceBlockingStub blockingStub;
 
-    private boolean isLogged = false;
-    private String clientId = null;
-
     public LoginManager(String host, String port) {
 
         channel = ManagedChannelBuilder.forTarget(host + ":" + port)
@@ -26,14 +23,18 @@ public class LoginManager {
 
     public StatusOuterClass.Status signIn(ClientInfoOuterClass.ClientInfo clientInfo) {
 
-        StatusOuterClass.Status status = blockingStub.signIn(clientInfo);
+        return blockingStub.signIn(clientInfo);
 
-        if (status.getEnum() == StatusOuterClass.Status.Enum.SUCCESS) {
-            isLogged = true;
-            clientId = status.getClientId();
-        }
+    }
 
-        return status;
+    public StatusOuterClass.Status signIn(String username, String password) {
+
+        ClientInfoOuterClass.ClientInfo clientInfo = ClientInfoOuterClass.ClientInfo.newBuilder()
+                .setUsername(username)
+                .setPassword(password)
+                .build();
+
+        return blockingStub.signIn(clientInfo);
 
     }
 
@@ -47,13 +48,5 @@ public class LoginManager {
 
         return blockingStub.changeInfo(clientInfo);
 
-    }
-
-    public boolean isLogged() {
-        return isLogged;
-    }
-
-    public String getClientId() {
-        return clientId;
     }
 }

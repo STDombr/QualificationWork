@@ -3,6 +3,7 @@ package com.knu.service.web.manager;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import service.ChatServiceGrpc;
 import service.chat.*;
 
@@ -13,8 +14,13 @@ public class ChatManager {
     private final ChatServiceGrpc.ChatServiceStub stub;
 
     private boolean isLogged = false;
+    private ClientInfoOuterClass.ClientInfo clientInfo;
 
-    public ChatManager(String host, String port) {
+    private SimpMessagingTemplate template;
+
+    public ChatManager(String host, String port, ClientInfoOuterClass.ClientInfo clientInfo, SimpMessagingTemplate template) {
+
+        this.template = template;
 
         channel = ManagedChannelBuilder.forTarget(host + ":" + port)
                 .usePlaintext()
@@ -23,9 +29,11 @@ public class ChatManager {
         blockingStub = ChatServiceGrpc.newBlockingStub(channel);
         stub = ChatServiceGrpc.newStub(channel);
 
+        this.clientInfo = clientInfo;
+
     }
 
-    public void login(ClientInfoOuterClass.ClientInfo clientInfo) {
+    public void login() {
 
         StreamObserver<UnsolicitedMessageOuterClass.UnsolicitedMessage> observer = new StreamObserver<UnsolicitedMessageOuterClass.UnsolicitedMessage>() {
             @Override
@@ -46,9 +54,17 @@ public class ChatManager {
                         break;
                     case CHAT_RESPONSE:
 
+                        System.out.println("Received new chat response");
+
+                        template.convertAndSend("topic/chatResponse", value.getChatResponse());
+
                         break;
 
                     case CHAT_INFO:
+
+                        System.out.println("Received new chat info");
+
+                        template.convertAndSend("topic/chatInfo", value.getChatInfo().getQuestion().getBody());
 
                         break;
                 }
@@ -69,7 +85,7 @@ public class ChatManager {
 
     }
 
-    public void logout(ClientInfoOuterClass.ClientInfo clientInfo) {
+    public void logout() {
 
         StatusOuterClass.Status status = blockingStub.logout(clientInfo);
 
@@ -87,7 +103,7 @@ public class ChatManager {
         blockingStub.sendAnswer(answer);
     }
 
-    public ChatInfoOuterClass.ChatInfoList getAllChats(ClientInfoOuterClass.ClientInfo clientInfo) {
+    public ChatInfoOuterClass.ChatInfoList getAllChats() {
         return blockingStub.getAllChats(clientInfo);
     }
 
@@ -105,4 +121,11 @@ public class ChatManager {
         return isLogged;
     }
 
+    public ClientInfoOuterClass.ClientInfo getClientInfo() {
+        return clientInfo;
+    }
+
+    public void setClientInfo(ClientInfoOuterClass.ClientInfo clientInfo) {
+        this.clientInfo = clientInfo;
+    }
 }

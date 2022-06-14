@@ -1,10 +1,13 @@
 syntax = "proto3";
 package service.chat;
 
+import "service/chat/question.proto";
+
 message ChatInfo {
   string chat_id = 1;
-  string sender_id = 2;
-  string recipient_id = 3;
+  Question question = 2;
+  string sender_id = 3;
+  string recipient_id = 4;
 }
 
 message ChatInfoList {

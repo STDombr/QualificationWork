@@ -7,16 +7,17 @@ import service.chat.ChatMessage;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Time;
 
 public class Converter {
 
     public static ChatMessage.ChatResponse getUserFromResultSet(ResultSet resultSet) throws SQLException {
         return ChatMessage.ChatResponse.newBuilder()
                 .setChatInfo(ChatInfoOuterClass.ChatInfo.newBuilder()
-                    .setChatId(resultSet.getString("chat_id"))
-                    .setSenderId(resultSet.getString("sender_id"))
-                    .setRecipientId(resultSet.getString("recipient_id"))
-                    .build())
+                        .setChatId(resultSet.getString("chat_id"))
+                        .setSenderId(resultSet.getString("sender_id"))
+                        .setRecipientId(resultSet.getString("recipient_id"))
+                        .build())
                 .setBody(resultSet.getString("body"))
                 .setTimestampInMillis(resultSet.getLong("timestamp"))
                 .build();
@@ -30,10 +31,18 @@ public class Converter {
                 .build();
     }
 
-    public static QuestionOuterClass.Question getQuestionFromResultSet(ResultSet resultSet) throws SQLException {
+    public static QuestionOuterClass.Question getQuestionFromResultSet(ResultSet resultSet, Time time) throws SQLException {
+
+        long seconds = 60 - time.getSeconds();
+
+        if (seconds < 30) {
+            seconds = 30;
+        }
+
         return QuestionOuterClass.Question.newBuilder()
                 .setId(resultSet.getString("id"))
                 .setBody(resultSet.getString("question"))
+                .setTimestampInMillis(seconds)
                 .build();
     }
 

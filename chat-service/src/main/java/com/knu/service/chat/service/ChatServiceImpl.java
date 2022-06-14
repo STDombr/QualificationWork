@@ -82,6 +82,7 @@ public class ChatServiceImpl extends ChatServiceGrpc.ChatServiceImplBase {
         if (pairsNotification.isLogged(request.getClientInfo())) {
             pairsNotification.addAnswer(request);
         }
+        responseObserver.onNext(null);
         responseObserver.onCompleted();
     }
 

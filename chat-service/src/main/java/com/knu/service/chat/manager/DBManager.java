@@ -17,7 +17,7 @@ public class DBManager {
     private static final String allChatMessages = "SELECT * FROM chat_messages WHERE chat_id=?";
     private static final String getQuestion = "SELECT * FROM chat_questions WHERE id=?";
     private static final String addNewMessage = "INSERT INTO chat_messages  (chat_id, sender_id, recipient_id, body, timestamp) VALUES (?, ?, ?, ?, ?)";
-    private static final String addChat = "INSERT INTO chats (chat_id, first_client_id, second_client_id) VALUES (?, ?, ?)";
+    private static final String addChat = "INSERT INTO chats (chat_id, first_client_id, second_client_id, question_id) VALUES (?, ?, ?, ?)";
     private static final String getClientChats = "SELECT * FROM chats WHERE first_client_id=? OR second_client_id=?";
     private static final String allChats = "SELECT * FROM chats";
 
@@ -114,7 +114,23 @@ public class DBManager {
             ResultSet result = preparedStatement.executeQuery();
 
             while (result.next()) {
-                list.addList(Converter.getChatsFromResultSet(result));
+                ChatInfoOuterClass.ChatInfo chatInfo = Converter.getChatsFromResultSet(result);
+
+                String questionId = result.getString("question_id");
+
+                PreparedStatement statement = connection.prepareStatement(getQuestion, Statement.RETURN_GENERATED_KEYS);
+
+                statement.setString(1, questionId);
+
+                ResultSet resultSet = statement.executeQuery();
+
+                resultSet.next();
+
+                chatInfo = chatInfo.toBuilder()
+                        .setQuestion(Converter.getQuestionFromResultSet(resultSet, new Time(0)))
+                        .build();
+
+                list.addList(chatInfo);
             }
         } catch (SQLException throwables) {
             logger.warning(throwables.getMessage());
@@ -137,7 +153,7 @@ public class DBManager {
 
             while (result.next()) {
                 logger.info("Question successfully found");
-                return Converter.getQuestionFromResultSet(result);
+                return Converter.getQuestionFromResultSet(result, time);
             }
         } catch (SQLException throwables) {
             logger.warning(throwables.getMessage());
@@ -146,14 +162,17 @@ public class DBManager {
         return null;
     }
 
-    public ChatInfoOuterClass.ChatInfo addNewChat(String senderId, String recipientId) {
+    public ChatInfoOuterClass.ChatInfo addNewChat(String senderId, String recipientId, String questionId) {
 
         try {
-            PreparedStatement preparedStatement = connection.prepareStatement(allChats, Statement.RETURN_GENERATED_KEYS);
+            PreparedStatement preparedStatement = connection.prepareStatement(allChats, Statement.RETURN_GENERATED_KEYS, ResultSet.TYPE_SCROLL_SENSITIVE);
 
             ResultSet result = preparedStatement.executeQuery();
 
-            result.last();
+
+            while (!result.last()) {
+                result.next();
+            }
 
             String stringId = result.getString("chat_id");
 
@@ -166,14 +185,24 @@ public class DBManager {
                 statement.setString(1, stringId);
                 statement.setString(2, senderId);
                 statement.setString(3, recipientId);
+                statement.setString(4, questionId);
 
-                preparedStatement.executeUpdate();
+                statement.executeUpdate();
                 logger.info("Chat created");
+
+                statement = connection.prepareStatement(getQuestion, Statement.RETURN_GENERATED_KEYS);
+
+                statement.setString(1, questionId);
+
+                ResultSet resultSet = statement.executeQuery();
+
+                resultSet.next();
 
                 return ChatInfoOuterClass.ChatInfo.newBuilder()
                         .setSenderId(senderId)
                         .setRecipientId(recipientId)
                         .setChatId(stringId)
+                        .setQuestion(Converter.getQuestionFromResultSet(resultSet, new Time(0)))
                         .build();
 
             }

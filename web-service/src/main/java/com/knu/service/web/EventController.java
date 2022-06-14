@@ -1,107 +1,141 @@
 package com.knu.service.web;
 
 import com.knu.service.web.manager.ChatManager;
-import com.knu.service.web.manager.LoginManager;
+import com.knu.service.web.model.Answer;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import service.chat.ChatInfoOuterClass;
+import service.chat.ClientInfoOuterClass;
 import service.chat.QuestionOuterClass;
-import service.login.ClientInfoOuterClass;
 
 import javax.annotation.PostConstruct;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Controller
 public class EventController {
 
-    private ClientInfoOuterClass.ClientInfo loginClientInfo = null;
-    private service.chat.ClientInfoOuterClass.ClientInfo chatClientInfo = null;
-    private LoginManager loginManager;
-    private ChatManager chatManager;
+    @Autowired
+    private SimpMessagingTemplate template;
+
+    private Map<String, ChatManager> chatManagerList;
 
     @PostConstruct
     private void init() {
 
-        chatManager = new ChatManager("localhost", "5566");
-        loginManager = new LoginManager("localhost", "5577");
-
-        loginClientInfo = ClientInfoOuterClass.ClientInfo.newBuilder()
-                .setUsername("STDombr")
-                .setPassword("0000")
-                .build();
-
-        loginManager.signIn(loginClientInfo);
-
-        if (loginManager.isLogged()) {
-
-            chatClientInfo = service.chat.ClientInfoOuterClass.ClientInfo.newBuilder()
-                    .setClientId(loginManager.getClientId())
-                    .build();
-
-            chatManager.login(chatClientInfo);
-
-        }
+        chatManagerList = new HashMap<>();
 
     }
 
     @RequestMapping("/chats")
     public String showChatsPage(Model model) {
 
-        if (loginManager.isLogged()) {
 
-            if (chatManager.isLogged()) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
-                ChatInfoOuterClass.ChatInfoList list = chatManager.getAllChats(chatClientInfo);
+        Set<String> roles = auth.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority).collect(Collectors.toSet());
 
-                model.addAttribute("UserName", loginClientInfo.getUsername());
-                model.addAttribute("ChatInfoList", list);
+        ClientInfoOuterClass.ClientInfo clientInfo = ClientInfoOuterClass.ClientInfo.newBuilder()
+                .setClientId(roles.iterator().next())
+                .build();
 
-                return "chats";
 
-            } else {
+        ChatManager manager = null;
 
-                model.addAttribute("UserName", loginClientInfo.getUsername());
-                model.addAttribute("Status", "Not logged to Chat Service!");
-
-                return "chats";
-
-            }
-
+        if (chatManagerList.containsKey(auth.getName())) {
+            manager = chatManagerList.get(auth.getName());
         } else {
-
-            return "login";
-
+            manager = new ChatManager("localhost", "5566", clientInfo, template);
+            manager.login();
+            chatManagerList.put(auth.getName(), manager);
         }
+
+        ChatInfoOuterClass.ChatInfoList list = manager.getAllChats();
+
+        model.addAttribute("UserName", auth.getName());
+        model.addAttribute("ChatInfoList", list);
+
+        return "chats";
 
     }
 
     @RequestMapping("/questions")
     public String showQuestionsPage(Model model) {
 
-        if (loginManager.isLogged()) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
-            if (chatManager.isLogged()) {
+        Set<String> roles = auth.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority).collect(Collectors.toSet());
 
-                QuestionOuterClass.Question question = chatManager.getQuestion();
+        ClientInfoOuterClass.ClientInfo clientInfo = ClientInfoOuterClass.ClientInfo.newBuilder()
+                .setClientId(roles.iterator().next())
+                .build();
 
-                model.addAttribute("UserName", loginClientInfo.getUsername());
-                model.addAttribute("Question", question);
+        ChatManager manager = null;
 
-                return "questions";
+        if (chatManagerList.containsKey(auth.getName())) {
+            manager = chatManagerList.get(auth.getName());
+        } else {
+            manager = new ChatManager("localhost", "5566", clientInfo, template);
+            manager.login();
+            chatManagerList.put(auth.getName(), manager);
+        }
 
-            } else {
+        QuestionOuterClass.Question question = manager.getQuestion();
 
-                model.addAttribute("UserName", loginClientInfo.getUsername());
-                model.addAttribute("Status", "Not logged to Chat Service!");
+        model.addAttribute("UserName", auth.getName());
+        model.addAttribute("Question", question);
+        System.out.println(question.getTimestampInMillis());
 
-                return "questions";
+        return "questions";
 
-            }
+    }
+
+    @MessageMapping("/answer")
+    public void newAnswer(Answer answer) {
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+        ChatManager manager = chatManagerList.get(auth.getName());
+
+        if (answer.getOption().equals("No")) {
+
+            QuestionOuterClass.Answer protoAnswer = QuestionOuterClass.Answer.newBuilder()
+                    .setClientInfo(manager.getClientInfo())
+                    .setTimestampInMillis(System.currentTimeMillis())
+                    .setQuestionId(answer.getId())
+                    .setOption(QuestionOuterClass.Option.newBuilder()
+                            .setEnum(QuestionOuterClass.Option.Enum.ENUM_NO)
+                            .build())
+                    .build();
+
+            manager.sendAnswer(protoAnswer);
+
+        } else if (answer.getOption().equals("Yes")) {
+
+            QuestionOuterClass.Answer protoAnswer = QuestionOuterClass.Answer.newBuilder()
+                    .setClientInfo(manager.getClientInfo())
+                    .setTimestampInMillis(System.currentTimeMillis())
+                    .setQuestionId(answer.getId())
+                    .setOption(QuestionOuterClass.Option.newBuilder()
+                            .setEnum(QuestionOuterClass.Option.Enum.ENUM_YES)
+                            .build())
+                    .build();
+
+            manager.sendAnswer(protoAnswer);
 
         } else {
-
-            return "login";
-
+            System.out.println("Wrong option!");
         }
 
     }

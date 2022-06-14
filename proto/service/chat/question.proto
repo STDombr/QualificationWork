@@ -6,6 +6,7 @@ import "service/chat/client_info.proto";
 message Question {
   string id = 1;
   string body = 2;
+  int64 timestamp_in_millis = 3;
 }
 
 message Answer {

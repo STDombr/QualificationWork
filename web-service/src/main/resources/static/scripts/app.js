@@ -4,29 +4,13 @@ var seconds = null;
 var timer = null;
 var modal = null;
 
-/*function setConnected(connected) {
-    $("#connect").prop("disabled", connected);
-    $("#disconnect").prop("disabled", !connected);
-    $("#serverStart").prop("disabled", !connected);
-    $("#serverPause").prop("disabled", !connected);
-    $("#serverDisconnect").prop("disabled", !connected);
-    if (connected) {
-        $("#conversation").show();
-    } else {
-        $("#conversation").hide();
-    }
-    $("#greetings").html("");
-}*/
-
 function connect() {
     const socket = new SockJS('/gs-guide-websocket');
     stompClient = Stomp.over(socket);
     stompClient.connect({}, function (frame) {
         console.log('Connected: ' + frame);
-        stompClient.subscribe('topic/chatInfo', function (message) {
-            console.log("WWWTTTFFF");
+        stompClient.subscribe('/user/queue/private-chatInfo', function (message) {
             newChatInfo(JSON.parse(message.body));
-            console.log("WWWTTTFFF");
         });
     });
 }
@@ -47,7 +31,7 @@ function sendYes() {
         if (seconds < 30) {
             seconds = 31;
         }
-        stompClient.send("/app/answer", {}, JSON.stringify({'id': document.getElementById("messageId").textContent, 'option': 'Yes'}));
+        stompClient.send("/app/private-answer", {}, JSON.stringify({'id': document.getElementById("messageId").textContent, 'option': 'Yes', 'name': document.getElementById("username").textContent}));
     }
 }
 
@@ -59,7 +43,7 @@ function sendNo() {
         if (seconds < 30) {
             seconds = 31;
         }
-        stompClient.send("/app/answer", {}, JSON.stringify({'id': document.getElementById("messageId").textContent, 'option': 'No'}));
+        stompClient.send("/app/private-answer", {}, JSON.stringify({'id': document.getElementById("messageId").textContent, 'option': 'No', 'name': document.getElementById("username").textContent}));
     }
 }
 
@@ -74,14 +58,11 @@ function updateTime() {
 }
 
 function newChatInfo(message) {
-    console.log("tessssttt");
     $("#modal-body").append(
         "<div>" +
-        "Opponent for question '" + message + "' found" +
+        "Opponent for question '" + message.question + "' found" +
         "</div>");
-    console.log("tessssttt");
     modal.show();
-    console.log("tessssttt");
 }
 
 /**function newChatInfo(message) {
@@ -109,5 +90,8 @@ $(function () {
     });
     $("#buttonNo").click(function () {
         sendNo();
+    });
+    $("#goToChats").click(function () {
+        window.location.replace("/chats");
     });
 });

@@ -1,11 +1,14 @@
 package com.knu.service.web.manager;
 
+import com.knu.service.web.model.Question;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import service.ChatServiceGrpc;
 import service.chat.*;
+
+import java.security.Principal;
 
 public class ChatManager {
 
@@ -15,6 +18,8 @@ public class ChatManager {
 
     private boolean isLogged = false;
     private ClientInfoOuterClass.ClientInfo clientInfo;
+    private String username;
+    private Principal principal;
 
     private SimpMessagingTemplate template;
 
@@ -56,7 +61,7 @@ public class ChatManager {
 
                         System.out.println("Received new chat response");
 
-                        template.convertAndSend("topic/chatResponse", value.getChatResponse());
+                        template.convertAndSendToUser(username, "/queue/private-chatResponse", value.getChatResponse());
 
                         break;
 
@@ -64,7 +69,10 @@ public class ChatManager {
 
                         System.out.println("Received new chat info");
 
-                        template.convertAndSend("topic/chatInfo", value.getChatInfo().getQuestion().getBody());
+                        Question question = new Question();
+                        question.setQuestion(value.getChatInfo().getQuestion().getBody());
+
+                        template.convertAndSendToUser(username, "/queue/private-chatInfo", question);
 
                         break;
                 }
@@ -127,5 +135,13 @@ public class ChatManager {
 
     public void setClientInfo(ClientInfoOuterClass.ClientInfo clientInfo) {
         this.clientInfo = clientInfo;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
     }
 }

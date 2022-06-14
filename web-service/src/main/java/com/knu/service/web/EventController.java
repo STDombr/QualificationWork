@@ -16,6 +16,7 @@ import service.chat.ClientInfoOuterClass;
 import service.chat.QuestionOuterClass;
 
 import javax.annotation.PostConstruct;
+import java.security.Principal;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -56,6 +57,7 @@ public class EventController {
             manager = chatManagerList.get(auth.getName());
         } else {
             manager = new ChatManager("localhost", "5566", clientInfo, template);
+            manager.setUsername(auth.getName());
             manager.login();
             chatManagerList.put(auth.getName(), manager);
         }
@@ -87,6 +89,7 @@ public class EventController {
             manager = chatManagerList.get(auth.getName());
         } else {
             manager = new ChatManager("localhost", "5566", clientInfo, template);
+            manager.setUsername(auth.getName());
             manager.login();
             chatManagerList.put(auth.getName(), manager);
         }
@@ -101,12 +104,12 @@ public class EventController {
 
     }
 
-    @MessageMapping("/answer")
+    @MessageMapping("/private-answer")
     public void newAnswer(Answer answer) {
 
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
-        ChatManager manager = chatManagerList.get(auth.getName());
+        ChatManager manager = chatManagerList.get(answer.getName());
 
         if (answer.getOption().equals("No")) {
 

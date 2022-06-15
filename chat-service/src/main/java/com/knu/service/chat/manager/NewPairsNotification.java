@@ -85,7 +85,7 @@ public class NewPairsNotification {
 
             if (tempOption != option && !answer.getClientInfo().getClientId().equals(temp.getClientInfo().getClientId())) {
 
-                ChatInfoOuterClass.ChatInfo chatInfo = dbManager.addNewChat(clientInfo.getClientId(), answer.getClientInfo().getClientId(), answer.getQuestionId());
+                ChatInfoOuterClass.ChatInfo chatInfo = dbManager.addNewChat(clientInfo.getClientId(), temp.getClientInfo().getClientId(), answer.getQuestionId());
                 UnsolicitedMessageOuterClass.UnsolicitedMessage unsolicitedMessage = UnsolicitedMessageOuterClass.UnsolicitedMessage.newBuilder()
                         .setChatInfo(chatInfo)
                         .build();

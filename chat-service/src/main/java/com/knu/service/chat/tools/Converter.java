@@ -23,12 +23,21 @@ public class Converter {
                 .build();
     }
 
-    public static ChatInfoOuterClass.ChatInfo getChatsFromResultSet(ResultSet resultSet) throws SQLException {
-        return ChatInfoOuterClass.ChatInfo.newBuilder()
-                .setChatId(resultSet.getString("chat_id"))
-                .setSenderId(resultSet.getString("first_client_id"))
-                .setRecipientId(resultSet.getString("second_client_id"))
-                .build();
+    public static ChatInfoOuterClass.ChatInfo getChatsFromResultSet(ResultSet resultSet, String clientId) throws SQLException {
+        if (clientId.equals(resultSet.getString("first_client_id"))) {
+            return ChatInfoOuterClass.ChatInfo.newBuilder()
+                    .setChatId(resultSet.getString("chat_id"))
+                    .setSenderId(resultSet.getString("first_client_id"))
+                    .setRecipientId(resultSet.getString("second_client_id"))
+                    .build();
+        } else {
+            return ChatInfoOuterClass.ChatInfo.newBuilder()
+                    .setChatId(resultSet.getString("chat_id"))
+                    .setSenderId(resultSet.getString("second_client_id"))
+                    .setRecipientId(resultSet.getString("first_client_id"))
+                    .build();
+        }
+
     }
 
     public static QuestionOuterClass.Question getQuestionFromResultSet(ResultSet resultSet, Time time) throws SQLException {

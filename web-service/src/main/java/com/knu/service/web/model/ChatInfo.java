@@ -6,6 +6,7 @@ public class ChatInfo {
     private String question;
     private String questionId;
     private String lastMessage;
+    private String recipientId;
 
     public ChatInfo() {
 
@@ -41,5 +42,13 @@ public class ChatInfo {
 
     public void setLastMessage(String lastMessage) {
         this.lastMessage = lastMessage;
+    }
+
+    public String getRecipientId() {
+        return recipientId;
+    }
+
+    public void setRecipientId(String recipientId) {
+        this.recipientId = recipientId;
     }
 }

@@ -111,7 +111,7 @@ public class DBManager {
             ResultSet result = preparedStatement.executeQuery();
 
             while (result.next()) {
-                ChatInfoOuterClass.ChatInfo chatInfo = Converter.getChatsFromResultSet(result);
+                ChatInfoOuterClass.ChatInfo chatInfo = Converter.getChatsFromResultSet(result, clientInfo.getClientId());
 
                 String questionId = result.getString("question_id");
 

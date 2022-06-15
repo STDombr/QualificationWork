@@ -7,7 +7,6 @@
     <link rel="stylesheet" th:href="@{/styles/styles.css}"/>
     <script type="text/javascript" th:src="@{/scripts/jquery.min.js}"></script>
     <script type="text/javascript" th:src="@{/scripts/bootstrap.min.js}"></script>
-    <script type="text/javascript" th:src="@{/scripts/scripts.js}"></script>
     <script type="text/javascript" th:src="@{/scripts/sockjs.js}"></script>
     <script type="text/javascript" th:src="@{/scripts/stomp.js}"></script>
     <script type="text/javascript" th:src="@{/scripts/chats-scripts.js}"></script>
@@ -53,22 +52,28 @@
 
                         <th:block th:each="chatInfo, iter : ${ChatInfoList}">
                             <th:block th:if="${iter.index} == 0">
-                                <a th:id="'chat' + ${chatInfo.chatId}" th:href="'javascript:activateChat('+ ${chatInfo.chatId} +');'" name="chat" class="list-group-item list-group-item-action active text-white rounded-0">
+                                <a th:id="'chat' + ${chatInfo.chatId}"
+                                   th:href="'javascript:activateChat('+ ${chatInfo.chatId} +');'" name="chat"
+                                   class="list-group-item list-group-item-action active text-white rounded-0">
                                     <div class="media"><img th:src="@{/images/chat-icon.png}" alt="user" width="50"
                                                             class="rounded-circle">
                                         <div class="media-body ml-4">
                                             <div class="d-flex align-items-center justify-content-between mb-1">
                                                 <span hidden name="chatId" th:text="${chatInfo.chatId}"></span>
+                                                <span hidden class="recipientId" name="recipientId" th:text="${chatInfo.recipientId}"></span>
                                                 <span hidden name="questionId" th:text="${chatInfo.questionId}"></span>
                                                 <h6 class="mb-0" name="question" th:text="${chatInfo.question}"></h6>
                                             </div>
-                                            <p class="font-italic mb-0 text-small" name="lastMessage" th:text="${chatInfo.lastMessage}"></p>
+                                            <p class="font-italic mb-0 text-small lastMessage" name="lastMessage"
+                                               th:text="${chatInfo.lastMessage}"></p>
                                         </div>
                                     </div>
                                 </a>
                             </th:block>
                             <th:block th:if="${iter.index} != 0">
-                                <a th:id="'chat' + ${chatInfo.chatId}" name="chat" th:href="'javascript:activateChat('+ ${chatInfo.chatId} +');'" class="list-group-item list-group-item-action rounded-0">
+                                <a th:id="'chat' + ${chatInfo.chatId}" name="chat"
+                                   th:href="'javascript:activateChat('+ ${chatInfo.chatId} +');'"
+                                   class="list-group-item list-group-item-action rounded-0">
                                     <div class="media"><img th:src="@{/images/chat-icon.png}" alt="user" width="50"
                                                             class="rounded-circle">
                                         <div class="media-body ml-4">
@@ -77,134 +82,60 @@
                                                 <span hidden name="questionId" th:text="${chatInfo.questionId}"></span>
                                                 <h6 class="mb-0" name="question" th:text="${chatInfo.question}"></h6>
                                             </div>
-                                            <p class="font-italic mb-0 text-small" name="lastMessage" th:text="${chatInfo.lastMessage}"></p>
+                                            <p class="font-italic mb-0 text-small lastMessage" name="lastMessage"
+                                               th:text="${chatInfo.lastMessage}"></p>
                                         </div>
                                     </div>
                                 </a>
                             </th:block>
                         </th:block>
-                        <!--<a href="#" class="list-group-item list-group-item-action list-group-item-light rounded-0">
-                            <div class="media"><img th:src="@{/images/chat-icon.png}" alt="user" width="50"
-                                                    class="rounded-circle">
-                                <div class="media-body ml-4">
-                                    <div class="d-flex align-items-center justify-content-between mb-1">
-                                        <h6 class="mb-0">Do you think Armageddon will be painful?</h6>
-                                    </div>
-                                    <p class="font-italic text-muted mb-0 text-small">Test message 2</p>
-                                </div>
-                            </div>
-                        </a>
-
-                        <a href="#" class="list-group-item list-group-item-action list-group-item-light rounded-0">
-                            <div class="media"><img th:src="@{/images/chat-icon.png}" alt="user" width="50"
-                                                    class="rounded-circle">
-                                <div class="media-body ml-4">
-                                    <div class="d-flex align-items-center justify-content-between mb-1">
-                                        <h6 class="mb-0">Do you believe in astrology?</h6>
-                                    </div>
-                                    <p class="font-italic text-muted mb-0 text-small">Test message 2</p>
-                                </div>
-                            </div>
-                        </a>-->
                     </div>
                 </div>
             </div>
         </div>
         <!-- Chat Box-->
         <div class="col-9 px-0" style="height: 750px">
-            <div class="px-4 py-5 chat-box bg-white" style="height: 94%">
-                <!-- Sender Message-->
-                <div class="media w-50 mb-3">
-                    <div class="media-body ml-3">
-                        <div class="bg-light rounded py-2 px-3 mb-2">
-                            <p class="text-small mb-0 text-muted">Test message 1</p>
+            <span hidden id="username" th:text="${UserName}"></span>
+            <span hidden id="userId" th:text="${UserId}"></span>
+            <div id="chatMessages" class="px-4 py-5 chat-box bg-white" style="height: 94%">
+                <th:block th:each="message : ${messages}">
+                    <th:block th:if="${message.senderId} == ${UserId}">
+
+                        <!-- Reciever Message-->
+                        <div class="media w-50 ml-auto mb-3">
+                            <div class="media-body">
+                                <div class="bg-primary rounded py-2 px-3 mb-2">
+                                    <p class="text-small mb-0 text-white" th:text="${message.body}"></p>
+                                </div>
+                                <p class="small text-muted" th:text="${message.time}"></p>
+                            </div>
                         </div>
-                        <p class="small text-muted">15:09 PM | Jun 1</p>
-                    </div>
-                </div>
 
-                <!-- Reciever Message-->
-                <div class="media w-50 ml-auto mb-3">
-                    <div class="media-body">
-                        <div class="bg-primary rounded py-2 px-3 mb-2">
-                            <p class="text-small mb-0 text-white">Test message 2</p>
+                    </th:block>
+                    <th:block th:if="${message.senderId} != ${UserId}">
+
+                        <!-- Sender Message-->
+                        <div class="media w-50 mb-3">
+                            <div class="media-body ml-3">
+                                <div class="bg-light rounded py-2 px-3 mb-2">
+                                    <p class="text-small mb-0 text-muted" th:text="${message.body}"></p>
+                                </div>
+                                <p class="small text-muted" th:text="${message.time}"></p>
+                            </div>
                         </div>
-                        <p class="small text-muted">15:09 PM | Jun 1</p>
-                    </div>
-                </div>
 
-                <!-- Sender Message-->
-                <div class="media w-50 mb-3">
-                    <div class="media-body ml-3">
-                        <div class="bg-light rounded py-2 px-3 mb-2">
-                            <p class="text-small mb-0 text-muted">Test message 3</p>
-                        </div>
-                        <p class="small text-muted">15:10 PM | Jun 1</p>
-                    </div>
-                </div>
-
-                <!-- Sender Message-->
-                <div class="media w-50 mb-3">
-                    <div class="media-body ml-3">
-                        <div class="bg-light rounded py-2 px-3 mb-2">
-                            <p class="text-small mb-0 text-muted">Test message 4</p>
-                        </div>
-                        <p class="small text-muted">15:10 PM | Jun 1</p>
-                    </div>
-                </div>
-
-
-                <!-- Reciever Message-->
-                <div class="media w-50 ml-auto mb-3">
-                    <div class="media-body">
-                        <div class="bg-primary rounded py-2 px-3 mb-2">
-                            <p class="text-small mb-0 text-white">Test message 5</p>
-                        </div>
-                        <p class="small text-muted">15:10 PM | Jun 1</p>
-                    </div>
-                </div>
-
-                <!-- Reciever Message-->
-                <div class="media w-50 ml-auto mb-3">
-                    <div class="media-body">
-                        <div class="bg-primary rounded py-2 px-3 mb-2">
-                            <p class="text-small mb-0 text-white">Test message 6</p>
-                        </div>
-                        <p class="small text-muted">15:10 PM | Jun 1</p>
-                    </div>
-                </div>
-
-
-                <!-- Sender Message-->
-                <div class="media w-50 mb-3">
-                    <div class="media-body ml-3">
-                        <div class="bg-light rounded py-2 px-3 mb-2">
-                            <p class="text-small mb-0 text-muted">Test message 7</p>
-                        </div>
-                        <p class="small text-muted">15:11 PM | Jun 1</p>
-                    </div>
-                </div>
-
-
-                <!-- Reciever Message-->
-                <div class="media w-50 ml-auto mb-3">
-                    <div class="media-body">
-                        <div class="bg-primary rounded py-2 px-3 mb-2">
-                            <p class="text-small mb-0 text-white">Test message 8</p>
-                        </div>
-                        <p class="small text-muted">15:11 PM | Jun 1</p>
-                    </div>
-                </div>
-
+                    </th:block>
+                </th:block>
             </div>
 
             <!-- Typing area -->
             <form action="#" class="bg-light">
                 <div class="input-group">
-                    <input type="text" placeholder="Type a message" aria-describedby="button-addon2"
-                           class="form-control rounded-0 border-0 py-4 bg-light">
+                    <input type="text" placeholder="Type a message" aria-describedby="buttonSendMessage2"
+                           class="form-control rounded-0 border-0 py-4 bg-light" onkeydown="sendMessage(this)">
                     <div class="input-group-append">
-                        <button id="button-addon2" type="submit" class="btn btn-link"><i class="fa fa-paper-plane"></i>
+                        <button id="buttonSendMessage2" type="submit" class="btn btn-link"><i
+                                class="fa fa-paper-plane"></i>
                         </button>
                     </div>
                 </div>

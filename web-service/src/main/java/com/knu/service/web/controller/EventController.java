@@ -1,9 +1,12 @@
-package com.knu.service.web;
+package com.knu.service.web.controller;
 
 import com.knu.service.web.manager.ChatManager;
 import com.knu.service.web.model.Answer;
+import com.knu.service.web.model.ChatId;
 import com.knu.service.web.model.ChatInfo;
+import com.knu.service.web.tools.Converter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.Authentication;
@@ -18,8 +21,6 @@ import service.chat.ClientInfoOuterClass;
 import service.chat.QuestionOuterClass;
 
 import javax.annotation.PostConstruct;
-import java.security.Principal;
-import java.sql.Array;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -28,6 +29,12 @@ public class EventController {
 
     @Autowired
     private SimpMessagingTemplate template;
+
+    @Value("${chat.service.host}")
+    private String chatHost;
+
+    @Value("${chat.service.port}")
+    private String chatPort;
 
     private Map<String, ChatManager> chatManagerList;
 
@@ -57,7 +64,7 @@ public class EventController {
         if (chatManagerList.containsKey(auth.getName())) {
             manager = chatManagerList.get(auth.getName());
         } else {
-            manager = new ChatManager("localhost", "5566", clientInfo, template);
+            manager = new ChatManager(chatHost, chatPort, clientInfo, template);
             manager.setUsername(auth.getName());
             manager.login();
             chatManagerList.put(auth.getName(), manager);
@@ -66,16 +73,36 @@ public class EventController {
         ChatInfoOuterClass.ChatInfoList chatInfoList = manager.getAllChats();
 
         List<ChatInfo> list = new ArrayList<>();
-        for (ChatInfoOuterClass.ChatInfo chatInfo : chatInfoList.getListList()) {
+        int chatsCount = chatInfoList.getListList().size();
+        for (int i = 1; i < chatsCount + 1; i++) {
+            ChatInfoOuterClass.ChatInfo chatInfo = chatInfoList.getList(chatsCount - i);
 
             ChatMessage.ChatResponseList chatResponseList = manager.getChatMessages(chatInfo);
             int responseListSize = chatResponseList.getListList().size();
+
+            List<com.knu.service.web.model.ChatMessage> messageList = new ArrayList<>();
+
+            if (chatInfo.getChatId().equals(chatInfoList.getList(chatsCount - 1).getChatId())) {
+                for (ChatMessage.ChatResponse response : chatResponseList.getListList()) {
+                    com.knu.service.web.model.ChatMessage message = new com.knu.service.web.model.ChatMessage();
+
+                    message.setChatId(response.getChatInfo().getChatId());
+                    message.setSenderId(response.getChatInfo().getSenderId());
+                    message.setRecipientId(response.getChatInfo().getRecipientId());
+                    message.setBody(response.getBody());
+                    message.setTime(Converter.convertTime(response.getTimestampInMillis()));
+
+                    messageList.add(message);
+                }
+                model.addAttribute("messages", messageList);
+            }
 
             ChatInfo temp = new ChatInfo();
 
             temp.setChatId(chatInfo.getChatId());
             temp.setQuestionId(chatInfo.getQuestion().getId());
             temp.setQuestion(chatInfo.getQuestion().getBody());
+            temp.setRecipientId(chatInfo.getRecipientId());
             if (responseListSize == 0) {
                 temp.setLastMessage("");
             } else {
@@ -86,6 +113,7 @@ public class EventController {
         }
 
         model.addAttribute("UserName", auth.getName());
+        model.addAttribute("UserId", manager.getClientInfo().getClientId());
         model.addAttribute("ChatInfoList", list);
 
         return "chats";
@@ -109,7 +137,7 @@ public class EventController {
         if (chatManagerList.containsKey(auth.getName())) {
             manager = chatManagerList.get(auth.getName());
         } else {
-            manager = new ChatManager("localhost", "5566", clientInfo, template);
+            manager = new ChatManager(chatHost, chatPort, clientInfo, template);
             manager.setUsername(auth.getName());
             manager.login();
             chatManagerList.put(auth.getName(), manager);
@@ -161,6 +189,46 @@ public class EventController {
         } else {
             System.out.println("Wrong option!");
         }
+
+    }
+
+    @MessageMapping("/private-getAllResponses")
+    public void getAllResponses(ChatId chatId) throws InterruptedException {
+
+        ChatManager manager = chatManagerList.get(chatId.getName());
+
+        ChatInfoOuterClass.ChatInfo chatInfo = ChatInfoOuterClass.ChatInfo.newBuilder()
+                .setChatId(chatId.getChatId().replace("chat", ""))
+                .setSenderId(manager.getClientInfo().getClientId())
+                .build();
+
+        ChatMessage.ChatResponseList list = manager.getChatMessages(chatInfo);
+
+        for (ChatMessage.ChatResponse response : list.getListList()) {
+            com.knu.service.web.model.ChatMessage message = Converter.convertChatResponse(response);
+
+            template.convertAndSendToUser(chatId.getName(), "/queue/private-chatResponse", message);
+            Thread.sleep(10);
+        }
+    }
+
+    @MessageMapping("/private-sendMessage")
+    public void sendMessage(com.knu.service.web.model.ChatMessage chatMessage) {
+
+        ChatManager manager = chatManagerList.get(chatMessage.getUsername());
+
+        ChatInfoOuterClass.ChatInfo chatInfo = ChatInfoOuterClass.ChatInfo.newBuilder()
+                .setChatId(chatMessage.getChatId().replace("chat", ""))
+                .setSenderId(manager.getClientInfo().getClientId())
+                .setRecipientId(chatMessage.getRecipientId())
+                .build();
+
+        ChatMessage.ChatRequest chatRequest = ChatMessage.ChatRequest.newBuilder()
+                .setChatInfo(chatInfo)
+                .setBody(chatMessage.getBody())
+                .build();
+
+        manager.sendMessage(chatRequest);
 
     }
 }

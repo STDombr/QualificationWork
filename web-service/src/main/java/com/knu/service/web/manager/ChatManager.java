@@ -1,6 +1,7 @@
 package com.knu.service.web.manager;
 
 import com.knu.service.web.model.Question;
+import com.knu.service.web.tools.Converter;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
@@ -61,7 +62,15 @@ public class ChatManager {
 
                         System.out.println("Received new chat response");
 
-                        template.convertAndSendToUser(username, "/queue/private-chatResponse", value.getChatResponse());
+                        com.knu.service.web.model.ChatMessage message = new com.knu.service.web.model.ChatMessage();
+
+                        message.setChatId(value.getChatResponse().getChatInfo().getChatId());
+                        message.setSenderId(value.getChatResponse().getChatInfo().getSenderId());
+                        message.setRecipientId(value.getChatResponse().getChatInfo().getRecipientId());
+                        message.setBody(value.getChatResponse().getBody());
+                        message.setTime(Converter.convertTime(value.getChatResponse().getTimestampInMillis()));
+
+                        template.convertAndSendToUser(username, "/queue/private-chatResponse", message);
 
                         break;
 

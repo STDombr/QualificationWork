@@ -2,6 +2,7 @@ package com.knu.service.web;
 
 import com.knu.service.web.manager.ChatManager;
 import com.knu.service.web.model.Answer;
+import com.knu.service.web.model.ChatInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -12,14 +13,14 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import service.chat.ChatInfoOuterClass;
+import service.chat.ChatMessage;
 import service.chat.ClientInfoOuterClass;
 import service.chat.QuestionOuterClass;
 
 import javax.annotation.PostConstruct;
 import java.security.Principal;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.sql.Array;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Controller
@@ -62,7 +63,27 @@ public class EventController {
             chatManagerList.put(auth.getName(), manager);
         }
 
-        ChatInfoOuterClass.ChatInfoList list = manager.getAllChats();
+        ChatInfoOuterClass.ChatInfoList chatInfoList = manager.getAllChats();
+
+        List<ChatInfo> list = new ArrayList<>();
+        for (ChatInfoOuterClass.ChatInfo chatInfo : chatInfoList.getListList()) {
+
+            ChatMessage.ChatResponseList chatResponseList = manager.getChatMessages(chatInfo);
+            int responseListSize = chatResponseList.getListList().size();
+
+            ChatInfo temp = new ChatInfo();
+
+            temp.setChatId(chatInfo.getChatId());
+            temp.setQuestionId(chatInfo.getQuestion().getId());
+            temp.setQuestion(chatInfo.getQuestion().getBody());
+            if (responseListSize == 0) {
+                temp.setLastMessage("");
+            } else {
+                temp.setLastMessage(chatResponseList.getList(responseListSize - 1).getBody());
+            }
+
+            list.add(temp);
+        }
 
         model.addAttribute("UserName", auth.getName());
         model.addAttribute("ChatInfoList", list);

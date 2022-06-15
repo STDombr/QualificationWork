@@ -61,10 +61,7 @@ public class DBManager {
             while (result.next()) {
                 ChatMessage.ChatResponse response = Converter.getUserFromResultSet(result);
 
-                if ((chatInfo.getSenderId().equals(response.getChatInfo().getSenderId()) && chatInfo.getRecipientId().equals(response.getChatInfo().getRecipientId()))
-                        || (chatInfo.getSenderId().equals(response.getChatInfo().getRecipientId()) && chatInfo.getRecipientId().equals(response.getChatInfo().getSenderId()))) {
-                    listBuilder.addList(response);
-                }
+                listBuilder.addList(response);
             }
         } catch (SQLException throwables) {
             logger.warning(throwables.getMessage());

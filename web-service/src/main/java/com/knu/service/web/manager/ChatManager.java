@@ -115,8 +115,8 @@ public class ChatManager {
         return blockingStub.getAllChats(clientInfo);
     }
 
-    public ChatMessage.ChatResponseList getChatMessages(ChatInfoOuterClass.ChatInfo clientInfo) {
-        return blockingStub.getChatMessages(clientInfo);
+    public ChatMessage.ChatResponseList getChatMessages(ChatInfoOuterClass.ChatInfo chatInfo) {
+        return blockingStub.getChatMessages(chatInfo);
     }
 
     public void sendMessage(ChatMessage.ChatRequest chatRequest) {

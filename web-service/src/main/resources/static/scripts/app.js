@@ -19,7 +19,6 @@ function disconnect() {
     if (stompClient !== null) {
         stompClient.disconnect();
     }
-    setConnected(false);
     console.log("Disconnected");
 }
 
@@ -64,17 +63,6 @@ function newChatInfo(message) {
         "</div>");
     modal.show();
 }
-
-/**function newChatInfo(message) {
-    $("#greetings").append(
-        "<tr>" +
-        "<td>" + message.eventId + "</td>" +
-        "<td>" + message.eventName + "</td>" +
-        "<td>" + message.callId + "</td>" +
-        "<td>" + message.dn + "</td>" +
-        "</tr>");
-    stompClient.send("/app/respond", {}, JSON.stringify(message));
-}**/
 
 $(function () {
     $("form").on('submit', function (e) {

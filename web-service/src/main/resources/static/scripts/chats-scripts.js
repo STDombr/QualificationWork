@@ -58,37 +58,41 @@ function newChatMessage(message) {
     var chat = document.getElementById("chat" + message.chatId).getElementsByClassName("lastMessage")[0];
     chat.innerText = message.body;
 
-    if (message.senderId === document.getElementById("userId").textContent) {
+    if (document.getElementById("chat" + message.chatId).classList.contains('active')) {
 
-        $("#chatMessages").append(
-            '<div class="media w-50 ml-auto mb-3">' +
-                '<div class="media-body">' +
-                    '<div class="bg-primary rounded py-2 px-3 mb-2">' +
-                        '<p class="text-small mb-0 text-white">' +
-                            message.body +
-                       '</p>' +
-                    '</div>' +
-                    '<p class="small text-muted">' +
-                        message.time +
-                    '</p>' +
-                '</div>' +
-            '</div>');
+        if (message.senderId === document.getElementById("userId").textContent) {
 
-    } else {
-
-        $("#chatMessages").append(
-            '<div class="media w-50 mb-3">' +
-                '<div class="media-body ml-3">' +
-                    '<div class="bg-light rounded py-2 px-3 mb-2">' +
-                        '<p class="text-small mb-0 text-muted">' +
-                            message.body +
-                        '</p>' +
+            $("#chatMessages").append(
+                '<div class="media w-50 ml-auto mb-3">' +
+                    '<div class="media-body">' +
+                        '<div class="bg-primary rounded py-2 px-3 mb-2">' +
+                            '<p class="text-small mb-0 text-white">' +
+                                message.body +
+                           '</p>' +
                         '</div>' +
-                            '<p class="small text-muted">' +
-                        message.time +
-                    '</p>' +
-                '</div>' +
-            '</div>');
+                        '<p class="small text-muted">' +
+                            message.time +
+                        '</p>' +
+                    '</div>' +
+                '</div>');
+
+        } else {
+
+            $("#chatMessages").append(
+                '<div class="media w-50 mb-3">' +
+                    '<div class="media-body ml-3">' +
+                        '<div class="bg-light rounded py-2 px-3 mb-2">' +
+                            '<p class="text-small mb-0 text-muted">' +
+                                message.body +
+                            '</p>' +
+                            '</div>' +
+                                '<p class="small text-muted">' +
+                            message.time +
+                        '</p>' +
+                    '</div>' +
+                '</div>');
+
+        }
 
     }
 
